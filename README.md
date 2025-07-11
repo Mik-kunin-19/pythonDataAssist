@@ -5,7 +5,7 @@ Utility module for data prep and object inspection.
 ## Included tools
 - **IntegrateAndPrepareDf** from smart_transpose
 - **attribute_tree** from attr_tree
-- **html_constructor** from markdown_toolbox
+- **Report** from markdown_toolbox
 - **cntr_norm_from_intens** from normalisation
 
 ## Installation
