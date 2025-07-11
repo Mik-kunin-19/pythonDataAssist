@@ -3,7 +3,12 @@ message: "If you use these utilities, please cite as below."
 title: "metabolomics-utils"
 authors:
   - family-names: Kunin
-    given-names: Mikhael
+    given-names: Mikhail
+supervisors:
+  - PD, Dr rer. nat. Johann Matschke
+  - Prof. Dr Verena Jendrossek
+affiliation:
+  - Institut für Zellbiologie; Universitätsklinikum Essen
 date-released: 2025-07-11
 url: https://github.com/Mik-kunin-19/pythonDataAssist
 version: 0.1.0
