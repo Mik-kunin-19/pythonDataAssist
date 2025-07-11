@@ -7,5 +7,5 @@ setup(
   description='Utility and Supplementary functions for scientific workflows and markdown reports',
   author='Mikhail Kunin',
   license='BSD-3-Clause',
-  url='https://github.com/YOUR_USERNAME/metabolomics-utils',
+  url='https://github.com/Mik-kunin-19/pythonDataAssist',
 )
