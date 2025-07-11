@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "If you use these utilities, please cite as below."
+title: "metabolomics-utils"
+authors:
+  - family-names: Kunin
+    given-names: Mikhael
+date-released: 2025-07-11
+url: https://github.com/Mik-kunin-19/pythonDataAssist
+version: 0.1.0
