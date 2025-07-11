@@ -2,8 +2,8 @@ cff-version: 1.2.0
 message: "If you use these utilities, please cite as below."
 title: "metabolomics-utils"
 authors:
-  - family-names: Kunin
-    given-names: Mikhail
+  - family-names (Name): Kunin
+    given-names (Vorname): Mikhail
 supervisors:
   - PD, Dr rer. nat. Johann Matschke
   - Prof. Dr Verena Jendrossek
