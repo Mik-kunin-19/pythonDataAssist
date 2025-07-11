@@ -1,0 +1,40 @@
+def cntr_norm_from_intens(df, cntr_group, cntr_value, dec=4):
+    """
+    This Function requires revision!
+    To complicated written for such a small matter
+    
+    v.11725
+    0. Takes the dataframe in the form of:
+    First column must be group description // here need to change to make any column so in the iterator it should be every except the one with the index in column names matching cntr_group argument
+    Other columns should be numeric at this stage only one categorical is allowed
+    1. It adds small value to avoid errors at the division stage later
+    2. It calculates mean of all values corresponding to cntr_value in the cntr_group
+    3. It divides all values in respective iteration column (metabolite/protein/gene relative quantative data)
+    4. After exiting the cycle it performs log2 transformation for the given column with rounding to selected (integer) 'dec' argument-defined decimal digit.
+
+    Arguments:
+    cntr_group - sets the column name that defines samples (contains samples names)
+    cntr_value - sets the name of the group against which all the other should be normalised
+    dec- decimal precision to round values (also required to determine small value increment to avoid zero value division)
+
+    returns modified copy version of the pandas dataframe
+
+    DISCLAIMER: *   early open-source AI versions (in spring 2023) assisted in syntax error catching in 1523 version (first used),
+                    otherwise function was built by user. 
+                **  decimal precision argument was added at the later timepoint to ensure more control over avoidance of floating-point arithmetic error during normalisation step.
+                *** function was verified on test data vs equivalent excel function results to ensure precise computation results.
+    """
+
+    df_copy = df.copy()
+    small_value = 10 ** (-dec)
+
+    # Identify numeric columns (exclude the group column)
+    numeric_cols = [col for col in df.columns if col != cntr_group]
+
+    for col in numeric_cols:
+        df_copy[col] = df_copy[col].round(dec) + small_value
+        control_mean = df_copy.loc[df_copy[cntr_group] == cntr_value, col].mean()
+        df_copy[col] = df_copy[col] / control_mean
+        df_copy[col] = np.log2(df_copy[col])
+        df_copy[col] = df_copy[col].round(dec)
+    return df_copy
