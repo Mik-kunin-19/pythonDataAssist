@@ -1,0 +1,344 @@
+import pandas as pd
+from IPython.display import HTML, display
+import jinja2
+import os
+import plotly.io as pio
+import plotly as plt
+import plotly.graph_objects as go
+import matplotlib.image as mpimg
+import datetime as dt
+class Report:
+    def __init__(self, directory, css ,styles="internal", title="", date=dt.datetime.now()):
+        self.dir = directory
+        self.title = title
+        self.date = date
+        self.html = "<!DOCTYPE html>\n"
+        self.html += "<html>\n"
+        self.html += "<head>\n"
+        self.html += f'<title>{title}</title>\n'
+        self.html += '<meta charset="UTF-8" />\n'
+        self.html +='<meta name="viewport" content="width=device-width, initial-scale=1.0" />\n'
+        if styles=="external":
+            print("Make sure your css file is in the same directory. Only relative path is read.")
+            self.html += f'<link rel="stylesheet" type="text/css" href="{css}"/>\n'
+        elif styles=="internal":
+            with open(f"{self.dir}/{css}","r") as file:
+                style = file.read().replace("\n","")    
+            self.html += f'<style>{style}"></style>'
+            print("Your styles are overwritten into html. You can now launch report html independently")
+        else:
+            raise ValueError("stylesheet value can be either 'internal' if you want to have styles inside html or 'external' if you want to keep coupled file .css wherever you send the document")
+        self.html += "</head>\n"
+        self.html += "<body>\n"
+    
+    def addElement(self, tag, nestedElement, css_class="", css_style="", is_self_closing=False):
+        if isinstance(nestedElement, list):
+            nestedElement = "".join(nestedElement)
+        if css_class and not css_style:
+            opening_tag = f'<{tag} class="{css_class}">'
+        elif css_style and not css_class:
+            opening_tag = f'<{tag} style="{css_style}">'
+        elif css_class and css_style:
+            opening_tag = f'<{tag} class="{css_class}" style="{css_style}">'
+        else:
+            opening_tag = f'<{tag}>'
+        
+        closing_tag = f'</{tag}>' if not is_self_closing else ''
+        
+        element_html = f'{opening_tag}{nestedElement}{closing_tag}\n'
+        return element_html
+        
+    def addDiv(self, nestedElement, nested=False, css_class="", css_style=""):
+        element_html = self.addElement('div', nestedElement, css_class, css_style)
+        if nested:
+            return element_html
+        else:
+            self.html+=element_html
+            return element_html
+        return element_html
+        
+    def addP(self, nestedElement, nested=False, css_class="", css_style=""):
+        element_html = self.addElement('p', nestedElement, css_class, css_style)
+        if nested:
+            return element_html
+        else:
+            self.html+=element_html
+            return element_html
+
+    def addHeading(self, nestedElement, level, nested=True, css_class="", css_style=""):
+        element_html = self.addElement(f'h{level}', nestedElement, css_class, css_style)
+        if nested:
+            return element_html
+        else:
+            self.html+=element_html
+            return element_html
+
+    def addList(self, nestedElements, nested=True, css_class="", css_style="", numerated=True):
+        tag = "ol" if numerated else "ul"
+        list_items = [self.addElement('li', el) for el in nestedElements]
+        element_html = self.addElement(tag, list_items, css_class, css_style)
+        if nested:
+            return element_html
+        else:
+            self.html+=element_html
+            return element_html
+
+    def addGap(self, Nlines=1, nested=True):
+        element_html = Nlines * "<br>\n"
+        if nested:
+            return element_html
+        else:
+            self.html+=element_html
+            return element_html
+            
+    def addSpaces(self, N=1):
+        element_html = N * "&nbsp;"
+        return element_html
+        
+    def addImg(self, adress="", nested=True, alt="" ,css_class="", css_style=""):
+        element_html=f"<img src={adress} id={id} alt={alt} style={css_style} class={css_class}>"
+        if nested:
+            return element_html
+        else:
+            self.html+=element_html
+            return element_html
+            
+    def addLink(self, adress, nestedElement="", id="", nested=True, css_class="", css_style="", selfLink=False):
+        if selfLink==True:
+            element_html=f"<a href={adress}  id={id} style={css_style} class={css_class}>"
+        else:
+            element_html=f"<a href={adress}  id={id} style={css_style} class={css_class}>{nestedElement}</a>"
+        if nested:
+            return element_html
+        else:
+            self.html+=element_html
+            return element_html
+    
+    def addPlotly(self, graphpath="", location="kernel", graph="", nested=True, css_class="", css_style=""):
+        if location=="kernel":
+            plot=graph
+            graph_div = pio.to_html(plot, full_html=False)
+            styled_div = f'<div class="{css_class}" style="{css_style}">{graph_div}</div>'
+        elif location=="html":
+            with open(graphpath,"r") as f:
+                html_graph=str(f.read())
+                graph_div=html_graph[html_graph.find("<script"):html_graph.rfind("</script>")+len("</script>")]
+            styled_div = f'<div class="{css_class}" style="{css_style}">{graph_div}</div>'
+        elif location=="json" and os.path.exists(f'{graphpath}'):
+            with open(f'{graphpath}', 'r') as f:
+                plot = pio.from_json(f.read())
+            graph_div = pio.to_html(plot, full_html=False)
+            styled_div = f'<div class="{css_class}" style="{css_style}">{graph_div}</div>'
+        else:
+            styled_div=f'<div class="{css_class}" style="{css_style}">Error Loading Plotly Image</div>'
+        if nested:
+            return styled_div
+        else:
+            self.html += styled_div
+            return styled_div
+    """     
+    def addImage(self, img_path, alt, nested=True, css_class="", css_style="")
+        img=mpimg.imread(img_path)
+        temp_html = f'<img src={img_path} alt={alt} class="{css_class}" style="{css_style}">'
+        if nested:
+            return temp_html
+        else:
+            self.html += temp_html
+            return temp_html
+    """
+    def pandas_to_html(self, df, nested=True, table_class="", col_name_class="", odd_even_row_class="", first_col_border_right="", last_col_border_left=""):
+        """
+        About pandas_to_html 
+        It allows you to translate any pandas table of you data actively in your RAM (current kernel execution) into <table><tr><td></td>...</tr></table> HTML5 compatible code.
+        nested - obligatory element - mostly you will not require to change this. Change this only in case the resulting code chunk must be seen separately and added directly to the main html file.
+        table_class - optional argument - general table css class for styling
+        col_name_class - optional argument - style column names separately with exclusive css styling for column headings
+        odd_even_row_class - optional argument - important styling possibility in case you want to draw additional attention to table. Recommendation: make rows background alternating shade of grey to make table (achieve this with tr::nth-child(even) or tr::nth-child(odd) or tr::nth-child(number)- for particular row or column)
+        first_col_border_right & last_col_border_left - optional arguments - allow yourself particular customization of the last and first columns' styles.
+        For example it is sensible to apply right border-left: solid 2px red (or any other color) if the first column in table represents control values or identifiers.
+        Same for left border if for example it has particularly important data or positive or negative control measurements it makes sense to separate it in style.
+        """
+        # Convert DataFrame to NumPy array
+        np_array = df.to_numpy()
+        html_table = f'<table class="{table_class}">\n'
+    
+        html_table += '<tr>\n'
+        for col in df.columns:
+            if col == df.columns[0] and first_col_border_right:
+                html_table += f'<th class="{col_name_class} {first_col_border_right}">{col}</th>\n'
+            elif col == df.columns[-1] and last_col_border_left:
+                html_table += f'<th class="{col_name_class} {last_col_border_left}">{col}</th>\n'
+            else:
+                html_table += f'<th class="{col_name_class}">{col}</th>\n'
+        html_table += '</tr>\n'
+    
+        for i, row in enumerate(np_array):
+            if i % 2 == 0 and odd_even_row_class:
+                html_table += f'<tr class="{odd_even_row_class}">\n'
+            else:
+                html_table += '<tr>\n'
+            for j, val in enumerate(row):
+                if j == 0 and first_col_border_right:
+                    html_table += f'<td class="{first_col_border_right}">{val}</td>\n'
+                elif j == len(row) - 1 and last_col_border_left:
+                    html_table += f'<td class="{last_col_border_left}">{val}</td>\n'
+                else:
+                    html_table += '<td>{}</td>\n'.format(val)
+            html_table += '</tr>\n'
+        # Close the table
+        html_table += '</table>'
+        if nested:
+            return html_table
+        else:
+            self.html += html_table
+            return html_table
+
+    def closeHTML(self):
+        """
+        How to use:
+        Simply close execution of your class with this non-argument method.
+        And check your result of course :-)
+        """
+        self.html += "</body>\n"
+        self.html += "</html>\n"
+        html_path = os.path.join(self.dir, f'{self.title}.html')
+        try:
+            with open(html_path, 'w') as file:
+                file.write(self.html)
+            print(f"HTML report written to {html_path}")
+        except Exception as e:
+            print(f"Error writing HTML report to {html_path}: {str(e)}")
+
+    def addDropdown(self, options=[], Categories={}, name="", id="", css_class="", css_style="", child_css_class="", category_class={}, nested=True):
+        """
+        How to use:
+        Arguments:
+        options - make in square brackets the list of all dropdown options you wish to set up in quotes as string type.
+        
+        Categories - optional argument - it will add headings separating your dropdown positions into groups with headings. To create make figure brackets {}
+        and add key:value pairs where keys will be Names of choices subgroups and values will suggest how many options will belong to the group.
+        Note: 
+        If you set only one key-value pair the heading will automatically apply to all of your options;
+        Also, if the value of the last Group will mean that your options list is not fully covered the heading of the last described category will be extended till the end of the list
+        (ie. if total number was options 7, you set first key-value pair is "Category 1":3, second is "Category 2":2. However we see that total covered by Categories is 5, less than 7.
+        In such case, the "Category 2" heading will extend towards the end and the last two options will also belong there)
+    
+        name - optional element - name of the object. Can be avoided cause for this type of smart objects js adresses via getElementById function.
+        However it is a good practice to set names to let yourself additional styling flexibility.
+    
+        id - obligatory element - for js for FE interaction logic building. Set simple CamelCase id.
+    
+        css_class - optional element - styling class for cross-talk with css file. Recommended, but not obligatory.
+    
+        css_style - optional element - inplace styling for writing exemptions from main css file's styling logic. Needed if particular styling must be overridden from general rule.
+    
+        child_css_class - optional element - this if applied will add a child (options) additional flexibility in styling.
+        Will be added to each of the options in html code.
+    
+        category_class: dictionary with same keys as Categories. However instead of numbers indicationg span over options values should contain name (or combinations) of classes to inherit styling.
+    
+        nested=True - obligatory element - mostly you will not require to change this. Change this only in case the resulting code chunk must be seen separately and added directly to the main html file.
+        """
+        css_class_component=f' class="{css_class}"' if len(css_class)>0 else ""
+        css_style_component=f' style="{css_style}"' if len(css_style)>0 else ""
+        child_class_component=f' class="{child_css_class}"' if len(child_css_class)>0 else ""
+        select_name_component=f' name="{name}"' if len(name)>0 else ""
+        select_id_component=f' id="{id}"' if len(id)>0 else ""
+        # category_class_component=f' class="{category_class}"' if len(category_class)>0 else ""
+        html_element=""
+        
+        if len(options) == 0:
+            print("<p>Error Creating dropdown: No options given</p>")
+        elif len(options) == 1:
+            print ("No point creating dropdown: Only 1 option given. Are you sure you want to create dropdown? [y/n]")
+            create = input().strip().lower()
+            if create == "y":
+                html_element += f'<select{select_id_component}{select_name_component}{css_class_component}{css_style_component}><option value="{options[0]}"{child_class_component}>{options[0]}</option></select>'
+                if nested:
+                    return html_element
+                else:
+                    self.html += html_element
+                    return html_element
+            else:
+                print("Change input!")
+        elif len(options) > 1 and len(Categories) == 0:
+            html_element += f'<select{select_id_component}{select_name_component}{css_class_component}{css_style_component}>'
+            for option in options:
+                html_element += f'<option value="{option}"{child_class_component}>{option}</option>'
+            html_element += "</select>"
+            if nested:
+                return html_element
+            else:
+                self.html += html_element
+                return html_element
+        elif len(options) > 1 and len(Categories) > 0:
+            optlist = options.copy()
+            if sum(Categories.values()) < len(optlist):
+                last_key = list(Categories.keys())[-1]
+                Categories[last_key] += len(optlist) - sum(Categories.values())
+            html_element += f'<select{select_id_component}{select_name_component}{css_class_component}{css_style_component}>'
+            for category in Categories:
+                category_class_component = f' class="{category_class.get(category, "")}"' if category in category_class else ""
+                html_element += f'<optgroup label="{category}"{category_class_component}>'
+                for _ in range(Categories[category]):
+                    html_element += f'<option value="{optlist[0]}"{child_class_component}>{optlist.pop(0)}</option>'
+                html_element += "</optgroup>"
+            html_element += "</select>"
+            if nested:
+                return html_element
+            else:
+                self.html += html_element
+                return html_element
+                
+    def addRadio(self, options=[], labels=[], ids=[], name="Radio1", labelsPosition="right" ,css_class="", css_style="", default=0, SeparateDivs=False, nested=True):
+        """
+        addRadio
+        Arguments:
+        - options - default empty list - bound options of the radio selector
+        - labels - default empty list - labels of the given options. Should not exceed number of given of options.
+        - ids  - default empty list - element id for css/scraping identification. Should not exceed number of given of options.
+        - name - default 'Radio1' - name for the element for css/scraping identification. 
+        - labelsPosition - default 'right' - where label will be located relative to the button
+        - css_class - optional element - styling class for cross-talk with css file. Recommended, but not obligatory.
+        - css_style - optional element - inplace styling for writing exemptions from main css file's styling logic. 
+                      Needed if particular styling must be overridden from general rule.
+        - default - default 1 -selects which element in the list of options should be initially 'checked'
+        - SeparateDivs - default False - defines whether options should be nested within separate div tags
+        - nested - default True - defines whether this radio selector group is nested within another level of html tag organisation
+                   or a standalone radio selector group
+        """
+        html_element=""
+        if len(options)>0:
+            for i, option in enumerate(options):
+                if (i+1)>len(labels):
+                    labels.append(option)
+                if (i+1)>len(ids):
+                    ids.append(option)
+                checked_attribute = ' checked' if (i) == default else ''
+                if labelsPosition=="left":
+                    html_element+=f'<label for="{ids[i]}">{labels[i]}</label>'
+                    html_element+=f'<input type="radio" name="{name}" value="{option}" id="{ids[i]}"{checked_attribute}>'+"\n"
+                elif labelsPosition=="right":
+                    html_element+=f'<input type="radio" name="{name}" value="{option}" id="{ids[i]}"{checked_attribute}>'
+                    html_element+=f'<label for="{ids[i]}">{labels[i]}</label>'+"\n"
+                else:
+                    break
+            if len(css_class)>0 or len(css_style)>0:
+                element=""
+                css_class_component=f' class="{css_class}"' if len(css_class)>0 else ""
+                css_style_component=f' style="{css_style}"' if len(css_style)>0 else ""
+                if SeparateDivs:
+                    for elem in html_element.split("\n")[:-1]:
+                        element+=f'<div{css_class_component}{css_style_component}>'+elem+"</div>"
+                    html_element=element
+                else:
+                    html_element=f'<div{css_class_component}{css_style_component}>'+html_element.replace("\n","")+"</div>"
+            else:
+                html_element=html_element.replace("\n","")
+            if nested:
+                return html_element
+            else:
+                self.html+=html_element
+                return html_element       
+        else:
+            print("No options to add")
